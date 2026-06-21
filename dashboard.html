@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f3;
+    color: #1a1a1a;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+  .header p {
+    font-size: 13px;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 700px) {
+    .grid { grid-template-columns: 1fr; }
+    body { padding: 1rem; }
+  }
+
+  .block {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .block-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .block-accent {
+    width: 4px;
+    height: 28px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .block-title {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .section {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .section:last-child {
+    border-bottom: none;
+    padding-bottom: 16px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 8px;
+  }
+
+  .todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .todo-item:last-of-type { border-bottom: none; }
+
+  .todo-check {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    background: #fff;
+  }
+  .todo-check.done {
+    background: #d4f7e8;
+    border-color: #5bc99a;
+  }
+  .todo-check.done::after {
+    content: '';
+    width: 8px;
+    height: 5px;
+    border-left: 1.5px solid #2a9d6a;
+    border-bottom: 1.5px solid #2a9d6a;
+    transform: rotate(-45deg) translateY(-1px);
+    display: block;
+  }
+
+  .todo-body { flex: 1; }
+  .todo-name {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #1a1a1a;
+  }
+  .todo-name.done {
+    text-decoration: line-through;
+    color: #bbb;
+  }
+  .todo-meta {
+    display: flex;
+    gap: 5px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 99px;
+  }
+  .badge-hoog   { background: #ffe5e5; color: #c0392b; }
+  .badge-middel { background: #fff3dc; color: #b7690a; }
+  .badge-laag   { background: #e4f5e1; color: #2e7d32; }
+  .badge-date   { background: #f0f0f0; color: #666; }
+
+  .todo-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #bbb;
+    font-size: 12px;
+    padding: 6px 0 0;
+    width: 100%;
+    text-align: left;
+    transition: color 0.15s;
+  }
+  .todo-add-btn:hover { color: #888; }
+
+  .note-area {
+    width: 100%;
+    font-size: 13px;
+    font-family: inherit;
+    color: #1a1a1a;
+    background: #fafafa;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 8px 10px;
+    resize: vertical;
+    min-height: 64px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .note-area:focus { border-color: #ccc; }
+
+  /* Modal */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e8e8e8;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  .modal h3 {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 14px;
+    color: #1a1a1a;
+  }
+  .modal input, .modal select {
+    width: 100%;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 8px 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fff;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+    outline: none;
+  }
+  .modal input:focus, .modal select:focus { border-color: #bbb; }
+  .modal-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+  .btn {
+    font-size: 13px;
+    font-family: inherit;
+    padding: 7px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    color: #555;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: #f5f5f5; }
+  .btn-primary {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+  .btn-primary:hover { background: #333; }
+
+  .trash-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #ddd;
+    font-size: 14px;
+    padding: 0 2px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .trash-btn:hover { color: #e74c3c; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="dag-titel"></h1>
+  <p>persoonlijk dashboard</p>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="modal-titel">Nieuwe todo</h3>
+    <input id="m-naam" type="text" placeholder="Taaknaam..." />
+    <select id="m-prio">
+      <option value="hoog">Hoog</option>
+      <option value="middel" selected>Middel</option>
+      <option value="laag">Laag</option>
+    </select>
+    <input id="m-date" type="date" />
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal()">Annuleren</button>
+      <button class="btn btn-primary" onclick="addTodo()">Toevoegen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BLOCKS = [
+  { id: 'life',     label: 'Life',     accent: '#1D9E75' },
+  { id: 'mind',     label: 'Mind',     accent: '#7F77DD' },
+  { id: 'body',     label: 'Body',     accent: '#D85A30' },
+  { id: 'business', label: 'Business', accent: '#378ADD' },
+];
+
+// Laad opgeslagen state of gebruik defaults
+function loadState() {
+  try {
+    const saved = localStorage.getItem('dashboard-state');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return {
+    todos: {
+      life:     [{ id: 1, naam: 'Vrienden contacteren', prio: 'middel', date: '2026-06-25', done: false }],
+      mind:     [{ id: 2, naam: 'Meditatie ochtend',    prio: 'hoog',   date: '2026-06-21', done: false }],
+      body:     [{ id: 3, naam: 'Squat sessie',         prio: 'hoog',   date: '2026-06-22', done: false }],
+      business: [{ id: 4, naam: 'Taak plannen',         prio: 'middel', date: '2026-06-25', done: false }],
+    },
+    notities: { life: '', mind: '', body: '', business: '' },
+  };
+}
+
+const state = loadState();
+
+function saveState() {
+  try { localStorage.setItem('dashboard-state', JSON.stringify(state)); } catch(e) {}
+}
+
+let activeBlock = null;
+
+function fmtDate(d) {
+  if (!d) return '';
+  const p = d.split('-');
+  return `${p[2]}/${p[1]}`;
+}
+
+function renderAll() {
+  document.getElementById('grid').innerHTML = BLOCKS.map(b => renderBlock(b)).join('');
+}
+
+function renderBlock(b) {
+  const todos = state.todos[b.id];
+  const todoRows = todos.map((t, i) => `
+    <div class="todo-item">
+      <div class="todo-check ${t.done ? 'done' : ''}" onclick="toggleTodo('${b.id}',${i})"></div>
+      <div class="todo-body">
+        <div class="todo-name ${t.done ? 'done' : ''}">${escHtml(t.naam)}</div>
+        <div class="todo-meta">
+          <span class="badge badge-${t.prio}">${t.prio}</span>
+          ${t.date ? `<span class="badge badge-date">${fmtDate(t.date)}</span>` : ''}
+        </div>
+      </div>
+      <button class="trash-btn" onclick="deleteTodo('${b.id}',${i})" title="Verwijder">&#x2715;</button>
+    </div>
+  `).join('');
+
+  return `
+    <div class="block">
+      <div class="block-header">
+        <div class="block-accent" style="background:${b.accent}"></div>
+        <span class="block-title">${b.label}</span>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Todos</div>
+        ${todoRows}
+        <button class="todo-add-btn" onclick="openModal('${b.id}')">
+          ＋ todo toevoegen
+        </button>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Notities</div>
+        <textarea class="note-area" id="note-${b.id}" placeholder="Typ hier..." rows="3" oninput="updateNote('${b.id}', this.value)">${escHtml(state.notities[b.id] || '')}</textarea>
+      </div>
+    </div>
+  `;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleTodo(blockId, idx) {
+  state.todos[blockId][idx].done = !state.todos[blockId][idx].done;
+  saveState();
+  renderAll();
+}
+
+function deleteTodo(blockId, idx) {
+  state.todos[blockId].splice(idx, 1);
+  saveState();
+  renderAll();
+}
+
+function updateNote(blockId, val) {
+  state.notities[blockId] = val;
+  saveState();
+}
+
+function openModal(blockId) {
+  activeBlock = blockId;
+  const b = BLOCKS.find(x => x.id === blockId);
+  document.getElementById('modal-titel').textContent = `Nieuwe todo — ${b.label}`;
+  document.getElementById('m-naam').value = '';
+  document.getElementById('m-prio').value = 'middel';
+  document.getElementById('m-date').value = '';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('m-naam').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  activeBlock = null;
+}
+
+function addTodo() {
+  const naam = document.getElementById('m-naam').value.trim();
+  if (!naam) { document.getElementById('m-naam').focus(); return; }
+  const prio = document.getElementById('m-prio').value;
+  const date = document.getElementById('m-date').value;
+  state.todos[activeBlock].push({ id: Date.now(), naam, prio, date, done: false });
+  saveState();
+  closeModal();
+  renderAll();
+}
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// Datum header
+const nu = new Date();
+const DAGEN = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+const MAANDEN = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+document.getElementById('dag-titel').textContent =
+  `${DAGEN[nu.getDay()]} ${nu.getDate()} ${MAANDEN[nu.getMonth()]} ${nu.getFullYear()}`;
+
+renderAll();
+</script>
+</body>
+</html>
