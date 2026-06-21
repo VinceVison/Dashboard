@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #111111;
+    color: #e8e8e8;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+
+  .top-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.25rem;
+  }
+
+  .global-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #e8e8e8;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .global-add-btn:hover { background: #2a2a2a; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (max-width: 700px) {
+    .grid { grid-template-columns: 1fr; }
+    body { padding: 1rem; }
+  }
+
+  .block {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .block-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    border-bottom: 1px solid #252525;
+  }
+
+  .block-accent {
+    width: 4px;
+    height: 26px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .block-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e8e8e8;
+  }
+
+  .section {
+    padding: 11px 16px;
+    border-bottom: 1px solid #222;
+  }
+  .section:last-child {
+    border-bottom: none;
+    padding-bottom: 14px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 7px;
+  }
+
+  .todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid #222;
+  }
+  .todo-item:last-of-type { border-bottom: none; }
+
+  .todo-check {
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    background: #1a1a1a;
+  }
+  .todo-check.done {
+    background: #1a3a2a;
+    border-color: #2a6a4a;
+  }
+  .todo-check.done::after {
+    content: '';
+    width: 7px;
+    height: 4px;
+    border-left: 1.5px solid #4aaa7a;
+    border-bottom: 1.5px solid #4aaa7a;
+    transform: rotate(-45deg) translateY(-1px);
+    display: block;
+  }
+
+  .todo-body { flex: 1; min-width: 0; }
+
+  .todo-name {
+    font-size: 13px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  /* Kleurregels: deadline vandaag of voorbij = rood, hoog = groen, laag/normaal = wit */
+  .todo-name.kleur-rood   { color: #e05555; }
+  .todo-name.kleur-groen  { color: #4dbb7a; }
+  .todo-name.kleur-wit    { color: #e8e8e8; }
+  .todo-name.done         { text-decoration: line-through; color: #555 !important; }
+
+  .todo-meta {
+    display: flex;
+    gap: 5px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 99px;
+  }
+  .badge-hoog   { background: #1a2e1a; color: #4dbb7a; border: 1px solid #2a5a3a; }
+  .badge-normaal{ background: #222; color: #888; border: 1px solid #333; }
+  .badge-laag   { background: #222; color: #888; border: 1px solid #333; }
+  .badge-date         { background: #1e1e1e; color: #666; border: 1px solid #2a2a2a; }
+  .badge-date.rood    { background: #2a1a1a; color: #e05555; border-color: #5a2a2a; }
+
+  .todo-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #444;
+    font-size: 13px;
+    padding: 1px 3px;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .icon-btn:hover { color: #aaa; }
+  .icon-btn.del:hover { color: #e05555; }
+
+  .todo-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #444;
+    font-size: 12px;
+    padding: 6px 0 0;
+    width: 100%;
+    text-align: left;
+    transition: color 0.15s;
+  }
+  .todo-add-btn:hover { color: #777; }
+
+  .note-area {
+    width: 100%;
+    font-size: 13px;
+    font-family: inherit;
+    color: #ccc;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 8px 10px;
+    resize: vertical;
+    min-height: 60px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .note-area:focus { border-color: #3a3a3a; }
+  .note-area::placeholder { color: #3a3a3a; }
+
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+
+  .modal {
+    background: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid #2e2e2e;
+    padding: 20px;
+    width: 310px;
+  }
+
+  .modal h3 {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 14px;
+    color: #e8e8e8;
+  }
+
+  .modal label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  .modal label:first-of-type { margin-top: 0; }
+
+  .modal input, .modal select {
+    width: 100%;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 8px 10px;
+    border: 1px solid #2e2e2e;
+    border-radius: 8px;
+    background: #111;
+    color: #e8e8e8;
+    outline: none;
+  }
+  .modal input:focus, .modal select:focus { border-color: #444; }
+  .modal select option { background: #1a1a1a; }
+
+  .modal-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+
+  .btn {
+    font-size: 13px;
+    font-family: inherit;
+    padding: 7px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid #2e2e2e;
+    background: #222;
+    color: #aaa;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: #2a2a2a; }
+
+  .btn-primary {
+    background: #e8e8e8;
+    color: #111;
+    border-color: #e8e8e8;
+  }
+  .btn-primary:hover { background: #ccc; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <button class="global-add-btn" onclick="openModal(null)">＋ todo toevoegen</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="modal-titel">Nieuwe todo</h3>
+    <label>Blok</label>
+    <select id="m-block">
+      <option value="business">Business</option>
+      <option value="body">Body</option>
+      <option value="life">Life</option>
+      <option value="mind">Mind</option>
+    </select>
+    <label>Taaknaam</label>
+    <input id="m-naam" type="text" placeholder="Wat moet er gebeuren?" />
+    <label>Urgentie</label>
+    <select id="m-prio">
+      <option value="hoog">Hoog</option>
+      <option value="normaal" selected>Normaal</option>
+      <option value="laag">Laag</option>
+    </select>
+    <label>Deadline</label>
+    <input id="m-date" type="date" />
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal()">Annuleren</button>
+      <button class="btn btn-primary" onclick="saveTodo()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BLOCKS = [
+  { id: 'business', label: 'Business', accent: '#378ADD' },
+  { id: 'body',     label: 'Body',     accent: '#D85A30' },
+  { id: 'life',     label: 'Life',     accent: '#1D9E75' },
+  { id: 'mind',     label: 'Mind',     accent: '#7F77DD' },
+];
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('dashboard-state-v3');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return {
+    todos: {
+      business: [{ id: 1, naam: 'Taak plannen', prio: 'normaal', date: '2026-06-25', done: false }],
+      body:     [{ id: 2, naam: 'Squat sessie', prio: 'hoog', date: '2026-06-22', done: false }],
+      life:     [{ id: 3, naam: 'Vrienden contacteren', prio: 'normaal', date: '2026-06-25', done: false }],
+      mind:     [{ id: 4, naam: 'Meditatie ochtend', prio: 'hoog', date: '2026-06-18', done: false }],
+    },
+    notities: { business: '', body: '', life: '', mind: '' },
+  };
+}
+
+const state = loadState();
+
+function saveState() {
+  try { localStorage.setItem('dashboard-state-v3', JSON.stringify(state)); } catch(e) {}
+}
+
+let activeBlock = null;
+let editIndex = null;
+
+function isVandaagOfVoorbij(dateStr) {
+  if (!dateStr) return false;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const d = new Date(dateStr);
+  d.setHours(0,0,0,0);
+  return d <= today;
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const p = d.split('-');
+  return `${p[2]}/${p[1]}`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function naamKleur(t) {
+  if (t.done) return 'done';
+  if (t.date && isVandaagOfVoorbij(t.date)) return 'todo-name kleur-rood';
+  if (t.prio === 'hoog') return 'todo-name kleur-groen';
+  return 'todo-name kleur-wit';
+}
+
+function renderAll() {
+  document.getElementById('grid').innerHTML = BLOCKS.map(b => renderBlock(b)).join('');
+}
+
+function renderBlock(b) {
+  const todos = state.todos[b.id];
+  const todoRows = todos.map((t, i) => {
+    const deadline = t.date && isVandaagOfVoorbij(t.date) && !t.done;
+    const nameClass = t.done ? 'todo-name done' : (deadline ? 'todo-name kleur-rood' : (t.prio === 'hoog' ? 'todo-name kleur-groen' : 'todo-name kleur-wit'));
+    const dateClass = 'badge badge-date' + (deadline ? ' rood' : '');
+    return `
+      <div class="todo-item">
+        <div class="todo-check ${t.done ? 'done' : ''}" onclick="toggleTodo('${b.id}',${i})"></div>
+        <div class="todo-body">
+          <div class="${nameClass}">${escHtml(t.naam)}</div>
+          <div class="todo-meta">
+            <span class="badge badge-${t.prio}">${t.prio.charAt(0).toUpperCase() + t.prio.slice(1)}</span>
+            ${t.date ? `<span class="${dateClass}">${fmtDate(t.date)}</span>` : ''}
+          </div>
+        </div>
+        <div class="todo-actions">
+          <button class="icon-btn" onclick="openEdit('${b.id}',${i})" title="Bewerken">✎</button>
+          <button class="icon-btn del" onclick="deleteTodo('${b.id}',${i})" title="Verwijder">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="block">
+      <div class="block-header">
+        <div class="block-accent" style="background:${b.accent}"></div>
+        <span class="block-title">${b.label}</span>
+      </div>
+      <div class="section">
+        <div class="section-label">Todos</div>
+        ${todoRows}
+        <button class="todo-add-btn" onclick="openModal('${b.id}')">＋ todo toevoegen</button>
+      </div>
+      <div class="section">
+        <div class="section-label">Notities</div>
+        <textarea class="note-area" placeholder="Typ hier..." rows="3" oninput="updateNote('${b.id}', this.value)">${escHtml(state.notities[b.id] || '')}</textarea>
+      </div>
+    </div>`;
+}
+
+function toggleTodo(blockId, idx) {
+  state.todos[blockId][idx].done = !state.todos[blockId][idx].done;
+  saveState(); renderAll();
+}
+
+function deleteTodo(blockId, idx) {
+  state.todos[blockId].splice(idx, 1);
+  saveState(); renderAll();
+}
+
+function updateNote(blockId, val) {
+  state.notities[blockId] = val;
+  saveState();
+}
+
+function openModal(blockId) {
+  activeBlock = blockId;
+  editIndex = null;
+  document.getElementById('modal-titel').textContent = 'Nieuwe todo';
+  document.getElementById('m-block').value = blockId || 'business';
+  document.getElementById('m-block').disabled = !!blockId;
+  document.getElementById('m-naam').value = '';
+  document.getElementById('m-prio').value = 'normaal';
+  document.getElementById('m-date').value = '';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('m-naam').focus(), 50);
+}
+
+function openEdit(blockId, idx) {
+  const t = state.todos[blockId][idx];
+  activeBlock = blockId;
+  editIndex = idx;
+  document.getElementById('modal-titel').textContent = 'Todo bewerken';
+  document.getElementById('m-block').value = blockId;
+  document.getElementById('m-block').disabled = true;
+  document.getElementById('m-naam').value = t.naam;
+  document.getElementById('m-prio').value = t.prio;
+  document.getElementById('m-date').value = t.date || '';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('m-naam').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('m-block').disabled = false;
+  activeBlock = null;
+  editIndex = null;
+}
+
+function saveTodo() {
+  const naam = document.getElementById('m-naam').value.trim();
+  if (!naam) { document.getElementById('m-naam').focus(); return; }
+  const blockId = activeBlock || document.getElementById('m-block').value;
+  const prio = document.getElementById('m-prio').value;
+  const date = document.getElementById('m-date').value;
+
+  if (editIndex !== null) {
+    const t = state.todos[blockId][editIndex];
+    t.naam = naam; t.prio = prio; t.date = date;
+  } else {
+    state.todos[blockId].push({ id: Date.now(), naam, prio, date, done: false });
+  }
+  saveState(); closeModal(); renderAll();
+}
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+renderAll();
+</script>
+</body>
+</html>
